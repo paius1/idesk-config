@@ -14,7 +14,7 @@ echo Checking your kit
 echo found yad
 
 # Checking for idesk is a good idea
-  command -v idesk >/dev/null 2>&1 || { echo -e  "\n     iDesk NOT FOUND     \n" | xmessage -center -file -; exit 1; }
+  command -v idesk >/dev/null 2>&1 || { echo -e  "\n     IDesk NOT FOUND     \n" | xmessage -center -file -; exit 1; }
 echo found idesk
  
 # Check for .ideskrc and .idesktop
@@ -163,7 +163,7 @@ EndOfArray
 	--form \
    	--fontname="Sans Mono 14" \
     --align=left \
-	--columns=2 \
+	--columns=3 \
 	--field="<b>Background</b>\n   Source":DIR "$BackgroundDOTSource" \
 	--field="   File":SFL "$BackgroundDOTFile" \
 	--field="   Mode":CB "$BackgroundModeCB" \
