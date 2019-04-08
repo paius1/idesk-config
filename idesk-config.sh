@@ -7,19 +7,19 @@
 # yad
 
 # Check for idesk and idesk files and folders and yad
-echo Checking your kit
+echo "Checking your kit"
 
 # Check for yad
   command -v yad >/dev/null 2>&1 || { echo -e  "\n     YAD NOT FOUND     \n" | xmessage -center -file -; exit 1; }
-echo found yad
+echo "Found yad"
 
 # Checking for idesk is a good idea
   command -v idesk >/dev/null 2>&1 || { echo -e  "\n     IDesk NOT FOUND     \n" | xmessage -center -file -; exit 1; }
-echo found idesk
+echo "Found IDesk"
  
 # Check for .ideskrc and .idesktop
   if [ -d ${HOME}/.idesktop ] ; then
-echo "Desktop exists";
+echo "Desktop exists"
   else
      # DESKTOP DOES NOT EXIST
 	  yad --center \
@@ -55,12 +55,13 @@ echo "Desktop exists";
   
   if [ -f ${HOME}/.ideskrc ]; then
     dotFile=${HOME}/.ideskrc
-echo using user config
+echo "Using User config"
   else 
     dotFile=$(find /  -path $HOME -prune -o -name 'dot.ideskrc' -print 2>/dev/null)
-echo using default  config
+echo "Using Default config"
   fi
-echo Kit is up to date
+
+echo "Kit is up to date"
 
 # Array variable names came from the Internet I hope they are right
 
@@ -113,7 +114,7 @@ echo Kit is up to date
 		Execute\\\[1\\\]
 EndOfArray
 
-# Loop to read (dot).ideskrc file put options and valid variable names in idesk.array should be in .config
+# Loop to read (dot).ideskrc file 
   for i in "${optionsArray[@]}"
   do
 
@@ -128,9 +129,17 @@ EndOfArray
 
    # Options are in the form of Option.Name':' Option Value
 	addend="\`grep -m 1 -e '^[[:blank:]]*"${i}":' ${dotFile} | cut -d: -f2 | sed 's/^ //'\`"
+
 	command="${augend}${addend}"
 	eval  $command
   done
+
+# Those silly Options with DOTs
+if [ -z $BackgroundDOTMode ]; then BackgroundDOTMode="Scaled"; fi
+#$CaptionPlacement
+if [ -z $ToolTipDOTCaptionPlacement ]; then ToolTipDOTCaptionPlacement="Right"; fi
+#$FillStyle
+#$SnapOrigin
 
 # Setup Combo Boxes  
   BackgroundModeCB=`echo 'Stretch!Scale!Center!Fit!Mirror' | sed -e "s/${BackgroundDOTMode}/\^${BackgroundDOTMode}/" `
@@ -164,11 +173,11 @@ EndOfArray
    	--fontname="Sans Mono 14" \
     --align=left \
 	--columns=3 \
-	--field="<b>Background</b>\n   Source":DIR "$BackgroundDOTSource" \
+	--field="<b>BACKGROUND</b>\n   Source":DIR "$BackgroundDOTSource" \
 	--field="   File":SFL "$BackgroundDOTFile" \
 	--field="   Mode":CB "$BackgroundModeCB" \
 	--field="   Color":CLR "$BackgroundDOTColor" \
-	--field="\n   Delay (ms)":NUM "$BackgroundDOTDelay"!0..1000!10!0 \
+	--field="\n   Delay (min)":NUM "$BackgroundDOTDelay"!0..1000!1!0 \
 	--field="<b>CAPTION</b>\n   Font":FN  "$captionFont" \
 	--field="   Color":CLR "$FontColor" \
 	--field=" Bold":CHK "$Bold" \
@@ -202,12 +211,16 @@ EndOfArray
 
 # Cancel or Close Window Clicked
 if [ -z  "$configuration" ]; then 
-   echo "Cancel"
+   echo "Canceled"
     exit 0
 fi	
 
+# backup existing .ideskrc
+  cp "${HOME}/.ideskrc" "${HOME}/ideskrc.bak"
+
+
 # Print out resulting .ideskrc
-echo table Config
+echo table Config > $HOME/.ideskrc
 
 for i in "${!optionsArray[@]}"; do 
 
@@ -220,16 +233,22 @@ for i in "${!optionsArray[@]}"; do
        # Caption Font Size
         if [ $(echo ${optionsArray[$i]} | grep  ^FontSize) ]; then
            FontSize=`echo  $configuration | cut -d: -f6 | rev | cut -d ' ' -f-1 | rev`
-		   echo " FontSize: $FontSize"
+		   echo " FontSize: $FontSize" >> ${HOME}/.ideskrc
 
 	   # Tool Tip Font Size
 		else
            ToolTipDOTFontSize=`echo  $configuration | cut -d: -f16 | rev | cut -d ' ' -f-1 | rev`
-           echo " ToolTip.FontSize: $ToolTipDOTFontSize"
+           echo " ToolTip.FontSize: $ToolTipDOTFontSize"  >> ${HOME}/.ideskrc
         fi
         continue
-     fi   
-
+     fi
+   
+   # if Background File is set remove Background Source   
+     if [ $(echo ${optionsArray[$i]} | grep  'Background\.File') ]; then
+	    echo Background File is set
+	    sed -i 's/Source:.*/Source:/' ${HOME}/.ideskrc
+	 fi
+	 
    # Generate valid Bash variable names
      variable=`echo ${optionsArray[$i]} | sed 's/\./DOT/' | sed 's/[^a-zA-Z0-9]//g'`
 
@@ -241,19 +260,22 @@ for i in "${!optionsArray[@]}"; do
      command=$command"\`"
      eval $command
    # Write Name: Value pair
-     command="echo -e \"   ${variable}: \$${variable}\""
+     command="echo -e \"   ${optionsArray[$i]}: \$${variable}\" >> ${HOME}/.ideskrc "
      eval $command
 done
-echo end
+echo end   >> ${HOME}/.ideskrc
 
 # Replace the table Actions
-  echo "table Actions"
-  echo "Lock:			 $Lock"
-  echo "Reload:          $Reload"
-  echo "Drag:            $Drag"
-  echo "EndDrag:         $EndDrag	"
-  echo "Execute[0]:      $Execute0"
-  echo "Execute[1]:     $Execute1"
-echo end
+  echo "table Actions"			>> ${HOME}/.ideskrc 
+  echo "Lock: $Lock"		 	>> ${HOME}/.ideskrc
+  echo "Reload: $Reload"	 	>> ${HOME}/.ideskrc
+  echo "Drag: $Drag"		 	>> ${HOME}/.ideskrc
+  echo "EndDrag: $EndDrag"	 	>> ${HOME}/.ideskrc
+  echo "Execute[0]: $Execute0"	>> ${HOME}/.ideskrc
+  echo "Execute[1]: $Execute1"	>> ${HOME}/.ideskrc
+echo end  >> ${HOME}/.ideskrc
+
+# if IDesk is running restart it
+  pidof -x idesk && killall idesk; sleep .1; nohup idesk > /dev/null 2>&1 &
 
 exit 0
